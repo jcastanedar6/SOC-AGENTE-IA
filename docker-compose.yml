@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: soc-postgres
+    environment:
+      POSTGRES_DB: soc_agent
+      POSTGRES_USER: soc_user
+      POSTGRES_PASSWORD: soc_pass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soc_user -d soc_agent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: soc-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      DATABASE_URL: postgresql://soc_user:soc_pass@postgres:5432/soc_agent
+      OPENCODE_API_URL: http://host.docker.internal:11434
+      OPENCODE_MODEL: llama3
+      CHROMA_PERSIST_DIR: /data/chroma_db
+      CHROMA_TELEMETRY_ENABLED: "false"
+      ANONYMIZED_TELEMETRY: "false"
+      EMBEDDER_MODEL: all-MiniLM-L6-v2
+      RAG_TOP_K: "5"
+      CORRELATION_WINDOW_SECONDS: "60"
+      BRUTE_FORCE_THRESHOLD: "5"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - chroma_data:/data/chroma_db
+      - huggingface_cache:/root/.cache/huggingface
+      - chroma_onnx_cache:/root/.cache/chroma
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: soc-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5175:80"
+    restart: unless-stopped
+
+  simulator:
+    build:
+      context: ./simulator
+    container_name: soc-simulator
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      BACKEND_URL: http://backend:8002
+      SIMULATOR_INTERVAL: "120"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  chroma_data:
+  huggingface_cache:
+  chroma_onnx_cache:

@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #0a0a0a;
+    color: #c9d1d9;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1117; }
+  ::-webkit-scrollbar-thumb { background: #21262d; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #30363d; }
+}
+
+@layer components {
+  .soc-card {
+    @apply bg-soc-card border border-soc-border rounded-lg p-4;
+  }
+
+  .soc-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium;
+  }
+
+  .badge-critical {
+    @apply bg-soc-red/15 text-soc-red border border-soc-red/30;
+  }
+  .badge-high {
+    @apply bg-orange-500/15 text-orange-400 border border-orange-500/30;
+  }
+  .badge-medium {
+    @apply bg-soc-amber/15 text-soc-amber border border-soc-amber/30;
+  }
+  .badge-low {
+    @apply bg-soc-blue/15 text-soc-blue border border-soc-blue/30;
+  }
+
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+  .status-online  { @apply bg-soc-green shadow-glow-green; }
+  .status-offline { @apply bg-soc-red shadow-glow-red; }
+  .status-warning { @apply bg-soc-amber shadow-glow-amber; }
+
+  .soc-btn {
+    @apply px-3 py-1.5 rounded text-xs font-mono font-medium border transition-all duration-150 cursor-pointer;
+  }
+  .soc-btn-primary {
+    @apply soc-btn bg-soc-green/10 text-soc-green border-soc-green/40 hover:bg-soc-green/20 hover:shadow-glow-green;
+  }
+  .soc-btn-danger {
+    @apply soc-btn bg-soc-red/10 text-soc-red border-soc-red/40 hover:bg-soc-red/20 hover:shadow-glow-red;
+  }
+  .soc-btn-ghost {
+    @apply soc-btn bg-transparent text-soc-muted border-soc-border hover:text-soc-text hover:border-soc-muted;
+  }
+}

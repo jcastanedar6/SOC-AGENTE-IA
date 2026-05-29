@@ -1,0 +1,10 @@
+.venv
+.venv313
+chroma_db
+agente_soc.db
+test_agente_soc.db
+__pycache__
+*.pyc
+.env
+.pytest_cache
+.git
