@@ -39,10 +39,10 @@ class SOCAgent:
         try:
             result = await asyncio.wait_for(
                 self._run_cycle_inner(db),
-                timeout=120.0,
+                timeout=180.0,
             )
         except asyncio.TimeoutError:
-            logger.warning("Agent cycle timed out after 120s")
+            logger.warning("Agent cycle timed out after 180s")
             self.state.record_error("cycle timed out")
             result = {"status": "error", "error": "cycle timed out"}
         except Exception as e:

@@ -5,9 +5,8 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Separate timeout for DNS/connect vs total
+# Timeout para conexión DNS/TCP
 CONNECT_TIMEOUT = 5.0
-TOTAL_TIMEOUT = 60.0
 
 
 class OpenCodeClient:
@@ -25,11 +24,11 @@ class OpenCodeClient:
         if system:
             payload["system"] = system
 
-        timeout = httpx.Timeout(TOTAL_TIMEOUT, connect=CONNECT_TIMEOUT)
+        timeout = httpx.Timeout(self.timeout, connect=CONNECT_TIMEOUT)
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await asyncio.wait_for(
                 client.post(f"{self.base_url}/api/generate", json=payload),
-                timeout=TOTAL_TIMEOUT,
+                timeout=self.timeout,
             )
             response.raise_for_status()
             data = response.json()
@@ -44,11 +43,11 @@ class OpenCodeClient:
         if system:
             payload["system"] = system
 
-        timeout = httpx.Timeout(TOTAL_TIMEOUT, connect=CONNECT_TIMEOUT)
+        timeout = httpx.Timeout(self.timeout, connect=CONNECT_TIMEOUT)
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await asyncio.wait_for(
                 client.post(f"{self.base_url}/api/chat", json=payload),
-                timeout=TOTAL_TIMEOUT,
+                timeout=self.timeout,
             )
             response.raise_for_status()
             data = response.json()
