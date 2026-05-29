@@ -27,6 +27,11 @@ backend/.env
 wppconnect_data/
 qrcode.png
 
+# ── Data / DB ──
+backend/agente_soc.db
+backend/chroma_db/
+backend/chroma_data/
+
 # ── Docker ──
 chroma_data/
 chroma_onnx_cache/
@@ -41,6 +46,7 @@ huggingface_cache/
 # ── OS ──
 .DS_Store
 Thumbs.db
+~$*
 
 # ── Logs ──
 logs/
