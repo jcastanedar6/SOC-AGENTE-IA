@@ -9,7 +9,7 @@ from app.auth.dependencies import get_current_user
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-@router.get("/", response_model=list[IncidentOut])
+@router.get("", response_model=list[IncidentOut])
 def list_incidents(
     skip: int = 0,
     limit: int = 50,
@@ -25,7 +25,7 @@ def list_incidents(
     return q.order_by(Incident.created_at.desc()).offset(skip).limit(limit).all()
 
 
-@router.post("/", response_model=IncidentOut, status_code=201)
+@router.post("", response_model=IncidentOut, status_code=201)
 def create_incident(payload: IncidentCreate, db: Session = Depends(get_db)):
     incident = Incident(**payload.model_dump())
     db.add(incident)

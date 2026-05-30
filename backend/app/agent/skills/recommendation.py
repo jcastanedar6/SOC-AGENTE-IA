@@ -45,21 +45,24 @@ class RecommendationSkill(AgentSkill):
 
         recommendations = []
 
-        for cls in classifications:
-            attack_type = cls.get("anomaly", {}).get("attack_type", "")
-            playbook = PLAYBOOKS.get(attack_type, ["Escalar al equipo SOC para análisis manual"])
-
+        if classifications:
             try:
-                enhanced = await self._enhance_with_llm(cls, playbook)
+                enhanced_batch = await self._enhance_batch_with_llm(classifications)
             except Exception:
-                enhanced = "\n".join(f"• {step}" for step in playbook)
+                enhanced_batch = {}
 
-            recommendations.append({
-                "incident_ref": cls,
-                "playbook_steps": playbook,
-                "enhanced_recommendation": enhanced,
-                "priority": cls.get("severity", "medium"),
-            })
+            for cls in classifications:
+                attack_type = cls.get("anomaly", {}).get("attack_type", "")
+                playbook = PLAYBOOKS.get(attack_type, ["Escalar al equipo SOC para análisis manual"])
+                cls_key = str(cls.get("anomaly", {}).get("event_id", ""))
+                enhanced = enhanced_batch.get(cls_key) or "\n".join(f"• {step}" for step in playbook)
+
+                recommendations.append({
+                    "incident_ref": cls,
+                    "playbook_steps": playbook,
+                    "enhanced_recommendation": enhanced,
+                    "priority": cls.get("severity", "medium"),
+                })
 
         for alert in server_alerts:
             recommendations.append({
@@ -69,19 +72,39 @@ class RecommendationSkill(AgentSkill):
                 "priority": alert.get("severity", "medium"),
             })
 
-        self._log(f"Generated {len(recommendations)} recommendations")
+        self._log(f"Generated {len(recommendations)} recommendations ({len(classifications)} LLM-batched)")
         return {"recommendations": recommendations}
 
-    async def _enhance_with_llm(self, classification: dict, playbook: list[str]) -> str:
+    async def _enhance_batch_with_llm(self, classifications: list[dict]) -> dict[str, str]:
         import asyncio
-        prompt = f"""Sos un analista SOC. Dado este incidente y los pasos del playbook, generá una recomendación clara y accionable en 2-3 oraciones.
+        lines = []
+        for i, cls in enumerate(classifications, 1):
+            eid = cls.get("anomaly", {}).get("event_id", i)
+            atype = cls.get("anomaly", {}).get("attack_type", "unknown")
+            playbook = PLAYBOOKS.get(atype, ["Escalar al equipo SOC para análisis manual"])
+            lines.append(
+                f"[{eid}] attack={atype}, severity={cls.get('severity')}, "
+                f"summary={cls.get('summary', 'N/A')}, playbook={', '.join(playbook[:3])}"
+            )
 
-Incidente: {classification.get("summary", "Incidente de seguridad")}
-Severidad: {classification.get("severity")}
-Pasos del playbook: {", ".join(playbook[:3])}
+        prompt = f"""Sos un analista SOC. Generá una recomendación clara y accionable (2-3 oraciones) para CADA incidente listado.
 
-Recomendación (2-3 oraciones, tono técnico y directo):"""
+Respondé SOLO con un JSON object donde cada key es el ID del incidente:
+{{{{
+  "1": "Recomendación para incidente 1...",
+  "2": "Recomendación para incidente 2..."
+}}}}
+
+INCIDENTES:
+{chr(10).join(lines)}"""
         try:
-            return await asyncio.wait_for(self.llm.complete(prompt), timeout=30.0)
-        except (asyncio.TimeoutError, Exception):
-            return "\n".join(f"• {step}" for step in playbook)
+            response = await asyncio.wait_for(self.llm.complete(prompt), timeout=60.0)
+            import re, json
+            match = re.search(r"\{.*\}", response, re.DOTALL)
+            if match:
+                result = json.loads(match.group())
+                if isinstance(result, dict):
+                    return {str(k): str(v) for k, v in result.items()}
+        except (asyncio.TimeoutError, Exception) as e:
+            self._warn(f"LLM batch recommendation failed: {e}, using playbooks")
+        return {}

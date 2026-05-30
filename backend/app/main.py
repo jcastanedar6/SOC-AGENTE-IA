@@ -18,6 +18,7 @@ app = FastAPI(
     description="Agente Inteligente SOC — Detección de Anomalías y Gestión de Incidentes",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
+    redirect_slashes=False,
 )
 
 app.add_middleware(

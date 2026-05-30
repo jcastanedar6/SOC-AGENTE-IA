@@ -9,12 +9,12 @@ from app.auth.dependencies import get_current_user
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-@router.get("/", response_model=list[ServerOut])
+@router.get("", response_model=list[ServerOut])
 def list_servers(db: Session = Depends(get_db)):
     return db.query(Server).order_by(Server.hostname).all()
 
 
-@router.post("/", response_model=ServerOut, status_code=201)
+@router.post("", response_model=ServerOut, status_code=201)
 def create_server(payload: ServerCreate, db: Session = Depends(get_db)):
     if db.query(Server).filter(Server.hostname == payload.hostname).first():
         raise HTTPException(status_code=409, detail="Server already exists")

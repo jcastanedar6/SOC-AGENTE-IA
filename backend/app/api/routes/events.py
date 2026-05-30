@@ -9,7 +9,7 @@ from app.auth.dependencies import get_current_user
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-@router.post("/", response_model=EventOut, status_code=201)
+@router.post("", response_model=EventOut, status_code=201)
 def create_event(payload: EventCreate, db: Session = Depends(get_db)):
     event = Event(**payload.model_dump())
     db.add(event)
@@ -18,7 +18,7 @@ def create_event(payload: EventCreate, db: Session = Depends(get_db)):
     return event
 
 
-@router.get("/", response_model=list[EventOut])
+@router.get("", response_model=list[EventOut])
 def list_events(
     skip: int = 0,
     limit: int = 100,
